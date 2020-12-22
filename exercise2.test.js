@@ -20,13 +20,16 @@ const pageInitialisation = () => {
         headless: false,
         slowMo: 100,
         args: [`--window-size=${width},${height}`]
-    }).then(el => {
+    })
+    .then(el => {
         init.browser = el
         return el.newPage();
-    }).then(el => {
+    })
+    .then(el => {
         init.page = el
-        return el.setViewport({ width, height });
-    }).then(() => init)
+        return el.setViewport({ width, height});
+    })
+    .then(() => init)
 }
 
 describe("Tests for mail.ru", () => {
