@@ -27,7 +27,7 @@ const pageInitialisation = () => {
     })
     .then(el => {
         init.page = el
-        return el.setViewport({ width, height });
+        return el.setViewport({ width, height});
     })
     .then(() => init)
 }
