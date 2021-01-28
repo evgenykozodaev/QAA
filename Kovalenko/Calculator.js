@@ -29,6 +29,7 @@ describe('test_1', function () {
         let result2 = calculator.sumTest2(2,4);
         expect(result2).to.eql(6,"сумма должна равняться 6");
         assert.equal(calculator.sumTest2(4,4),8,"сумма должна равняться 8");
+        console.log("Hello world");
         done()
     });
 });
