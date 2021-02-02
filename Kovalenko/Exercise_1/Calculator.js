@@ -1,6 +1,7 @@
 let chai = require('chai');
 let should = chai.should();
 let expect= chai.expect;
+let assert= chai.assert;
 let test = require(".//test_data.json");
 
 class Calculator  {   
@@ -13,10 +14,14 @@ class Calculator  {
         return(a*b);
     }
 
-    division(a,b) {
-        return(a/b);
+    division(a, b) {
+        if (b != 0) {
+            return (a / b);
+        }
+        else {
+            return  new Error("not / 0");
+        }
     }
-
     subtraction(a,b) {
         return(a-b);
     }
@@ -35,7 +40,7 @@ function testRun (name, data, f){
         if(name ==="division")
         {
             result = f(data.negative.numberA,data.negative.numberB);
-            expect(result,data.negative.massage).to.not.be.finite;
+            expect(result).to.be.an('error')
         }
         else {
             result = f(data.negative.numberA,data.negative.numberB);
