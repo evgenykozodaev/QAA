@@ -1,0 +1,69 @@
+{
+    "sum":{
+       "positiv":{
+        "numberA":1,
+        "numberB":1,
+        "result":2,
+        "massage":"1+1=2"
+       },
+       "negative":{
+        "numberA":1,
+        "numberB":1,
+        "result":5,
+        "massage":"1+1 not = 5"
+       }
+    },
+    "multiplication":{
+        "positiv":{
+            "numberA":1,
+            "numberB":1,
+            "result":1,
+            "massage":"1*1=1"
+           },
+           "negative":{
+            "numberA":1,
+            "numberB":0,
+            "result":1,
+            "massage":"1*0 not=1"
+           }
+    },
+    "division":{
+        "positiv":{
+            "numberA":1,
+            "numberB":1,
+            "result":1,
+            "massage":"1/1=1"
+           },
+           "negative":{
+            "numberA":1,
+            "numberB":0,
+            "massage":"1 /0 = Infinity"            
+           }
+    },
+    "subtraction":{
+        "positiv":{
+            "numberA":1,
+            "numberB":1,
+            "result":0,
+            "massage":"1-1=0"
+           },
+           "negative":{
+            "numberA":1,
+            "numberB":0,
+            "result":0,
+            "massage":"1-0 not=0"
+           }
+    },
+    "cube":{
+        "positiv":{
+            "numberA":1,            
+            "result":1,
+            "massage":"1^2=1"
+           },
+           "negative":{
+            "numberA":0,            
+            "result":1,
+            "massage":"0^2 not=1"
+           }
+    }
+}
