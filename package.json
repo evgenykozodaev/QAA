@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "test": "mocha './Trusevich/Exercise_2/*.js'"
+    "test": "mocha"
   },
   "dependencies": {},
   "devDependencies": {
