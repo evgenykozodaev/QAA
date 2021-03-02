@@ -45,7 +45,7 @@ function addLog(testName, req, res, t_status) {
             method: req.method,
             url: req.url,
             payload: req.payload,
-            headers: req.headers,
+            headers: req.headers,   
         },
         ResponseBody: {
             status: res.status,
@@ -141,4 +141,38 @@ describe("get users", function () {
 
         Promise.all(promises).then(() => done(), done);
     });
+});
+
+describe("create post", function () {
+    for (let i = 0; i < 10; i++) {
+        it("post for user " + i, function (done) {
+            chai.request(HOST)
+                .post("/posts")
+                .set('Content-type', 'application/json; charset=UTF-8')
+                .send({
+                    title: 'Test' + i,
+                    body: 'Some long post body' + i,
+                    userId: 1,
+                })
+                .end((err, res) => {
+                    try {
+                        assert.notExists(err);
+                    
+                        assert.equal(res.status, 201)
+    
+                        const post = res.body;
+
+                        console.log(post)
+                        
+                        assert.isString(post.title);
+                        assert.isString(post.body);
+                        assert.isNumber(post.id);
+                        assert.equal(post.userId, 1);
+                        done()
+                    } catch (terr) {
+                        done(terr);
+                    }
+                });
+        });
+    }
 });
