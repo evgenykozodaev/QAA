@@ -18,7 +18,22 @@ const params = [
         siteId: "130",
         cartNumber: "4242424242424242",
     },
-]
+];
+
+let randomNumber = generateRandomNumber(10000, 99999999);
+let testLog = {};
+let transactionId;
+
+function writeTestResultToLogs(testName, requestBody, responseBody, testResult) {
+    let testResultToLog =
+    {
+        TestName: testName,
+        RequestBody: requestBody,
+        ResponseBody: responseBody,
+        TestResult: testResult,
+    };
+    return testResultToLog
+}
 
 function addLog(testName, reqBody, resBody, testResult) {
     let text = "\nTest Name: " + testName + "\n" + "Request Body: \n" + reqBody + ",\n" + "ResponseBody: \n" + resBody + ",\n" + "Test Result: " + testResult + "\n";
@@ -26,29 +41,102 @@ function addLog(testName, reqBody, resBody, testResult) {
     fs.appendFileSync(pathLogFile, text)
 }
 
-function generateRandomString(string_length) {
-    let random_string = '';
-    let random_ascii;
-    let ascii_low = 65;
-    let ascii_high = 90
-    for (let i = 0; i < string_length; i++) {
-        random_ascii = Math.floor((Math.random() * (ascii_high - ascii_low)) + ascii_low);
-        random_string += String.fromCharCode(random_ascii)
+function generateRandomString(length) {
+    var randomChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    var random_string = '';
+    for (var i = 0; i < length; i++) {
+        random_string += randomChars.charAt(Math.floor(Math.random() * randomChars.length));
     }
     return random_string
 }
 
 function generateRandomNumber(min, max) {
-    return Math.floor((Math.random() * (max - min + 1)) + min);
+    return String(Math.floor((Math.random() * (max - min + 1)) + min));
+}
+
+function writePayRequestBody(randomNumber, cartNumber) {
+    let payRequestData = {
+        "Amount": "5",
+        "Currency": "RUB",
+        "ExtraData": {
+            "Custom": "field",
+            "Key": "value"
+        },
+        "CustomerInfo": {
+            "Address": "street",
+            "Country": "BLR",
+            "Email": "ilya@ff.ru",
+            "Phone": "+1234567567890",
+            "Town": "minsk",
+            "ZIP": "225700",
+            "Language": "BY",
+            "IP": "135.20.34.46"
+        },
+        "PaymentMethod": "Card",
+        "Description": "test5555555555555",
+        "OrderId": randomNumber,
+        "PaymentDetails": {
+            "CardholderName": "test test",
+            "CardNumber": cartNumber,
+            "CVC": "711",
+            "ExpMonth": "06",
+            "ExpYear": "22"
+        },
+        "RebillFlag": true
+    }
+    return payRequestData;
+}
+
+function writeBlockRequestBody(randomNumber) {
+    let blockRequestData = {
+        "Amount": "5",
+        "Currency": "RUB",
+        "ExtraData": {
+            "Custom": "field",
+            "Key": "value"
+        },
+        "CustomerInfo": {
+            "Address": "street",
+            "Country": "BYA",
+            "Email": "ilya@ff.ru",
+            "Phone": "+375243454666",
+            "Town": "minsk",
+            "ZIP": "222410",
+            "Language": "BY",
+            "IP": "1.2.3.111"
+        },
+        "PaymentMethod": "Card",
+        "Description": "ilya",
+        "OrderId": randomNumber + '1',
+        "PaymentDetails": {
+            "CardholderName": "ilya vvv",
+            "CardNumber": '4111111111111111',
+            "CVC": "723",
+            "ExpMonth": "06",
+            "ExpYear": "22"
+        },
+        "RebillFlag": true
+    };
+    return blockRequestData;
+}
+
+function writeChargeRequestBody(randomNumber, transactionId) {
+    let chargeRequestData = {
+        "OrderId": randomNumber,
+        "Amount": "5",
+        "Currency": "RUB",
+        "Description": "Description",
+        "TransactionId": transactionId,
+    };
+    return chargeRequestData;
 }
 
 describe('API Test', function () {
-    let testLog = {};
 
     before(function () {
         let date = new Date();
-        let textBefore = "Test Run" + date + "\n";
-        fs.writeFileSync(pathLogFile, textBefore);
+        let textBefore = "\n\nTest Run: " + date + "\n";
+        fs.appendFileSync(pathLogFile, textBefore);
 
         testLog.StartDate = date;
         testLog.tests = [];
@@ -56,14 +144,13 @@ describe('API Test', function () {
 
     after(function () {
         let date = new Date();
-        let textAfter = "Test End:" + date;
-        testLog.EndDate = date
+        let textAfter = "Test End: " + date + "\n";
+        testLog.EndDate = date;
 
         fs.appendFileSync(pathLogFile, textAfter)
-        fs.writeFileSync(pathLogFileJSON, JSON.stringify(testLog))
+        // JSON.stringify docs: https://developer.mozilla.org/ru/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify
+        fs.appendFileSync(pathLogFileJSON, JSON.stringify(testLog, null, 2))
     });
-
-    let randomNumber = String(generateRandomNumber(10000, 99999999));
 
     it('Check Balance', function (done) {
         chai.request(urlServer)
@@ -74,76 +161,30 @@ describe('API Test', function () {
             .then(function (res) {
                 expect(res).to.have.status(201);
                 expect(res).to.be.json;
-                expect(res).not.to.be.empty;
+                expect(res.body).not.to.be.empty;
                 expect(res.body).to.have.property('TransactionState').equal('success');
                 expect(res.body).to.have.property('Currency').equal('RUB');
-                let req = "Url : " + res.request.url + "\n" + "Header : " + JSON.stringify(res.request.header) + "\n" + "Body :" + "-";
+                let req = "Url : " + res.request.url + "\n" + "Header : " + JSON.stringify(res.request.header) + "\n" + "Body : -";
                 addLog("Check Balance", req, res.text, "Success");
-
-                testLog.tests.push({
-                    TestName: "Check Balance",
-                    RequestBody: '',
-                    ResponseBody: res.text,
-                    TestResult: 'Success',
-                })
+                testLog.tests.push(writeTestResultToLogs("Check Balance", res.request.header, res.body, "Success"));
                 done();
             })
             .catch(function (error) {
-                testLog.tests.push({
-                    TestName: "Check Balance",
-                    RequestBody: '',
-                    ResponseBody: '',
-                    TestResult: error.message,
-                });
+                testLog.tests.push(writeTestResultToLogs("Check Balance", "", "", error.message));
 
                 addLog("Check Balance", "", "", error.message);
-
-                done(error)
+                done(error);
             })
     })
 
-
-
     params.forEach(function (param, index) {
-        let transactionId;
-
         it('Pay_CheckStatus', function (done) {
-            let data = {
-                "Amount": "5",
-                "Currency": "RUB",
-                "ExtraData": {
-                    "Custom": "field",
-                    "Key": "value"
-                },
-                "CustomerInfo": {
-                    "Address": "street",
-                    "Country": "BLR",
-                    "Email": "ilya@ff.ru",
-                    "Phone": "+1234567567890",
-                    "Town": "minsk",
-                    "ZIP": "225700",
-                    "Language": "BY",
-                    "IP": "135.20.34.46"
-                },
-                "PaymentMethod": "Card",
-                "Description": "test5555555555555",
-                "OrderId": randomNumber,
-                "PaymentDetails": {
-                    "CardholderName": "test test",
-                    "CardNumber": param.cartNumber,
-                    "CVC": "711",
-                    "ExpMonth": "06",
-                    "ExpYear": "22"
-                },
-                "RebillFlag": true
-            };
-
             chai.request(urlServer)
                 .post('/payments/requests/single')
                 .set('X-SITE-ID', param.siteId)
                 .set('X-REQUEST-ID', generateRandomString(9) + "_test")
                 .set('X-REQUEST-SIGNATURE', 'test')
-                .send(data)
+                .send(writePayRequestBody(randomNumber, param.cartNumber))
                 .then(function (res) {
                     transactionId = res.body.TransactionId;
                     res.should.have.status(201);
@@ -152,14 +193,9 @@ describe('API Test', function () {
                     res.body.should.have.property('OrderId', randomNumber);
                     res.body.should.have.property('Amount', '5.00');
                     res.body.should.have.property('Currency', 'RUB');
-                    let req = "Url : " + res.request.url + "\n" + "Header : " + JSON.stringify(res.request.header) + "\n" + "Body : " + JSON.stringify(data);
+                    let req = "Url : " + res.request.url + "\n" + "Header : " + JSON.stringify(res.request.header) + "\n" + "Body : " + JSON.stringify(writePayRequestBody(randomNumber, param.cartNumber));
                     addLog(`Pay № ${index + 1}`, req, res.text, "Success");
-                    testLog.tests.push({
-                        TestName: `Pay № ${index + 1}`,
-                        RequestBody: data,
-                        ResponseBody: res.text,
-                        TestResult: 'Success',
-                    })
+                    testLog.tests.push(writeTestResultToLogs(`Pay № ${index + 1}`, writePayRequestBody(randomNumber, param.cartNumber), res.body, "Success"));
 
                     chai.request(urlServer)
                         .get(`/transactions/${transactionId}`)
@@ -169,83 +205,33 @@ describe('API Test', function () {
                         .then(function (res) {
                             res.should.have.status(201);
                             res.body.should.be.a('object');
-                            let req = "Url : " + res.request.url + "\n" + "Header : " + JSON.stringify(res.request.header) + "\n" + "Body : " + JSON.stringify(data);
+                            let req = "Url : " + res.request.url + "\n" + "Header : " + JSON.stringify(res.request.header) + "\n" + "Body : -";
                             addLog(`CheckStatus № ${index + 1}`, req, res.text, "Success");
-                            testLog.tests.push({
-                                TestName: `CheckStatus № ${index + 1}`,
-                                RequestBody: data,
-                                ResponseBody: res.text,
-                                TestResult: 'Success',
-                            })
+                            testLog.tests.push(writeTestResultToLogs(`CheckStatus № ${index + 1}`, res.request.header, res.body, "Success"));
                             done();
                         })
                         .catch(function (error) {
-                            testLog.tests.push({
-                                TestName: `CheckStatus № ${index + 1}`,
-                                RequestBody: '',
-                                ResponseBody: '',
-                                TestResult: error.message,
-                            });
+                            testLog.tests.push(writeTestResultToLogs(`CheckStatus № ${index + 1}`, "", "", error.message));
                             addLog("CheckStatus", "", "", error.message);
-
                             done(error)
                         })
 
                 })
                 .catch(function (error) {
-                    testLog.tests.push({
-                        TestName: `Pay № ${index + 1}`,
-                        RequestBody: '',
-                        ResponseBody: '',
-                        TestResult: error.message,
-                    });
+                    testLog.tests.push(writeTestResultToLogs(`Pay № ${index + 1}`, "", "", error.message));
                     addLog("Pay", "", "", error.message);
-
                     done(error)
                 });
         })
     })
 
-
-    let transactionId;
-
     it('Block', function (done) {
-        let data = {
-            "Amount": "5",
-            "Currency": "RUB",
-            "ExtraData": {
-                "Custom": "field",
-                "Key": "value"
-            },
-            "CustomerInfo": {
-                "Address": "street",
-                "Country": "BYA",
-                "Email": "ilya@ff.ru",
-                "Phone": "+375243454666",
-                "Town": "minsk",
-                "ZIP": "222410",
-                "Language": "BY",
-                "IP": "1.2.3.111"
-            },
-            "PaymentMethod": "Card",
-            "Description": "ilya",
-            "OrderId": randomNumber + '1',
-            "PaymentDetails": {
-                "CardholderName": "ilya vvv",
-                "CardNumber": '4111111111111111',
-                "CVC": "723",
-                "ExpMonth": "06",
-                "ExpYear": "22"
-            },
-            "RebillFlag": true
-        };
-
         chai.request(urlServer)
             .post('/payments/requests/block')
             .set('X-SITE-ID', '151')
             .set('X-REQUEST-ID', generateRandomString(9) + "_test")
             .set('X-REQUEST-SIGNATURE', 'test')
-            .send(data)
+            .send(writeBlockRequestBody(randomNumber))
             .then(function (res) {
                 transactionId = res.body.TransactionId;
 
@@ -255,46 +241,26 @@ describe('API Test', function () {
                 res.body.should.have.property('OrderId', randomNumber + "1");
                 res.body.should.have.property('Amount', '5.00');
                 res.body.should.have.property('Currency', 'RUB');
-                let req = "Url : " + res.request.url + "\n" + "Header : " + JSON.stringify(res.request.header) + "\n" + "Body : " + JSON.stringify(data);
-                addLog(`Block`, req, res.text, "Success");
-
-                testLog.tests.push({
-                    TestName: "Block",
-                    RequestBody: data,
-                    ResponseBody: res.text,
-                    TestResult: 'Success',
-                })
-
+                let req = "Url : " + res.request.url + "\n" + "Header : " + JSON.stringify(res.request.header) + "\n" + "Body : " + JSON.stringify(writeBlockRequestBody(randomNumber));
+                addLog("Block", req, res.text, "Success");
+                testLog.tests.push(writeTestResultToLogs("Block", writeBlockRequestBody(randomNumber), res.body, "Success"));
                 setTimeout(function () { done() }, 500);
             })
             .catch(function (error) {
-                testLog.tests.push({
-                    TestName: "Block",
-                    RequestBody: '',
-                    ResponseBody: '',
-                    TestResult: error.message,
-                });
+                testLog.tests.push(writeTestResultToLogs("Block", "", "", error.message));
                 addLog("Block", "", "", error.message);
-
-                done(error)
+                done(error);
             });
     });
 
 
     it('Charge', function (done) {
-        let data = {
-            "OrderId": randomNumber,
-            "Amount": "5",
-            "Currency": "RUB",
-            "Description": "Description",
-            "TransactionId": transactionId,
-        };
         chai.request(urlServer)
             .post('/payments/charge')
             .set('X-SITE-ID', '151')
             .set('X-REQUEST-ID', generateRandomString(9) + "_test")
             .set('X-REQUEST-SIGNATURE', '')
-            .send(data)
+            .send(writeChargeRequestBody(randomNumber, transactionId))
             .then(function (res) {
                 res.should.have.status(201);
                 res.body.should.be.a('object');
@@ -302,27 +268,15 @@ describe('API Test', function () {
                 res.body.should.have.property('OrderId', randomNumber + '1');
                 res.body.should.have.property('Amount', '5.00');
                 res.body.should.have.property('Currency', 'RUB');
-                let req = "Url : " + res.request.url + "\n" + "Header : " + JSON.stringify(res.request.header) + "\n" + "Body : " + JSON.stringify(data);
-                addLog(`Charge`, req, res.text);
-
-                testLog.tests.push({
-                    TestName: "Charge",
-                    RequestBody: data,
-                    ResponseBody: res.text,
-                    TestResult: 'Success',
-                })
+                let req = "Url : " + res.request.url + "\n" + "Header : " + JSON.stringify(res.request.header) + "\n" + "Body : " + JSON.stringify(writeChargeRequestBody(randomNumber, transactionId));
+                addLog("Charge", req, res.text, "Success");
+                testLog.tests.push(writeTestResultToLogs("Charge", writeChargeRequestBody(randomNumber, transactionId), res.body, "Success"));
                 done();
             })
             .catch(function (error) {
-                testLog.tests.push({
-                    TestName: "Charge",
-                    RequestBody: '',
-                    ResponseBody: '',
-                    TestResult: error.message,
-                });
+                testLog.tests.push(writeTestResultToLogs("Charge", "", "", error.message));
                 addLog("Charge", "", "", error.message);
-
-                done(error)
+                done(error);
             })
     })
 })
